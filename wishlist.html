@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="View your saved books and wishlist on BookVerse.">
+  <title>My Wishlist — BookVerse</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
+</head>
+<body>
+  <div id="navbar-container"></div>
+  <div class="toast-container" id="toast-container"></div>
+
+  <div class="modal-backdrop" id="modal-backdrop" onclick="closeModal()"></div>
+  <div class="modal" id="quick-view-modal">
+    <div class="modal-header">
+      <h2>Quick View</h2>
+      <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body"></div>
+  </div>
+
+  <main class="page-content wishlist-page">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="index.html">Home</a>
+        <span class="separator"><i class="fas fa-chevron-right"></i></span>
+        <span class="current">Wishlist</span>
+      </div>
+
+      <div class="wishlist-header">
+        <h1><i class="fas fa-heart" style="color:var(--accent);margin-right:8px;"></i> My Wishlist</h1>
+        <span class="wishlist-count" id="wishlist-count"></span>
+      </div>
+
+      <div id="wishlist-content">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+  </main>
+
+  <div id="footer-container"></div>
+  <button class="back-to-top" id="back-to-top"><i class="fas fa-arrow-up"></i></button>
+
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('navbar-container').innerHTML = renderNavbar();
+      document.getElementById('footer-container').innerHTML = renderFooter();
+      initNavbarScroll();
+      initBackToTop();
+      initUserDropdown();
+      initSearch();
+
+      renderWishlist();
+    });
+
+    function renderWishlist() {
+      const container = document.getElementById('wishlist-content');
+      const countEl = document.getElementById('wishlist-count');
+      const wishlistBooks = AppState.wishlist.map(id => BookStore.books.find(b => b.id === id)).filter(Boolean);
+
+      countEl.textContent = `${wishlistBooks.length} items`;
+
+      if (wishlistBooks.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon"><i class="far fa-heart"></i></div>
+            <h3>Your wishlist is empty</h3>
+            <p>Save your favourite books here and buy them later!</p>
+            <a href="catalog.html" class="btn btn-primary btn-lg"><i class="fas fa-shopping-bag"></i> Discover Books</a>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="book-grid book-grid-wide">
+          ${wishlistBooks.map(book => {
+            const discount = getDiscount(book.originalPrice, book.price);
+            return `
+              <div class="book-card" onclick="window.location.href='book-detail.html?id=${book.id}'">
+                <div class="book-card-image">
+                  <img src="${book.image}" alt="${book.title}" loading="lazy" onerror="this.src='https://via.placeholder.com/240x340/1a1a2e/6c5ce7?text=${encodeURIComponent(book.title)}'">
+                  ${book.badge ? `<div class="book-card-badge"><span class="badge badge-accent">${book.badge}</span></div>` : ''}
+                  <div class="book-card-actions" style="opacity:1;transform:none;">
+                    <button class="wishlisted" onclick="event.stopPropagation(); removeFromWishlist(${book.id})" title="Remove from Wishlist">
+                      <i class="fas fa-heart"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="book-card-body">
+                  <div class="book-card-category">${book.category}</div>
+                  <h3 class="book-card-title">${book.title}</h3>
+                  <p class="book-card-author">by ${book.author}</p>
+                  <div class="book-card-rating">
+                    <div class="stars">${generateStars(book.rating)}</div>
+                    <span class="rating-count">(${formatReviews(book.reviews)})</span>
+                  </div>
+                  <div class="book-card-footer">
+                    <div class="book-price">
+                      <span class="current">${formatPrice(book.price)}</span>
+                      <span class="original">${formatPrice(book.originalPrice)}</span>
+                      <span class="discount">${discount}% off</span>
+                    </div>
+                    <button class="add-to-cart-btn" onclick="event.stopPropagation(); moveToCart(${book.id})">
+                      <i class="fas fa-cart-plus"></i> Add
+                    </button>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    }
+
+    function removeFromWishlist(bookId) {
+      AppState.toggleWishlist(bookId);
+      renderWishlist();
+    }
+
+    function moveToCart(bookId) {
+      AppState.addToCart(bookId);
+      AppState.wishlist = AppState.wishlist.filter(id => id !== bookId);
+      AppState.save();
+      renderWishlist();
+      document.getElementById('navbar-container').innerHTML = renderNavbar();
+      initUserDropdown();
+    }
+  </script>
+</body>
+</html>

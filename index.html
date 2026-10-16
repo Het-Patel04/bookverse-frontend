@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="BookVerse - Your universe of books. Discover bestsellers, new releases, and classic literature at unbeatable prices.">
+  <title>BookVerse — Your Universe of Books</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
+</head>
+<body>
+  <!-- Navbar -->
+  <div id="navbar-container"></div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Quick View Modal -->
+  <div class="modal-backdrop" id="modal-backdrop" onclick="closeModal()"></div>
+  <div class="modal" id="quick-view-modal">
+    <div class="modal-header">
+      <h2>Quick View</h2>
+      <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body"></div>
+  </div>
+
+  <main class="page-content">
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="container">
+        <div class="hero-content">
+          <div class="hero-text">
+            <h1>Discover Your Next <span class="highlight">Great Read</span></h1>
+            <p>Explore millions of books from bestselling authors, emerging voices, and timeless classics — all at prices that make your wallet happy.</p>
+            <div class="hero-actions">
+              <a href="catalog.html" class="btn btn-primary btn-lg"><i class="fas fa-rocket"></i> Explore Now</a>
+              <a href="catalog.html?category=Bestseller" class="btn btn-outline btn-lg"><i class="fas fa-fire"></i> Bestsellers</a>
+            </div>
+            <div class="hero-stats">
+              <div class="hero-stat">
+                <div class="stat-number">50K+</div>
+                <div class="stat-label">Books Available</div>
+              </div>
+              <div class="hero-stat">
+                <div class="stat-number">10M+</div>
+                <div class="stat-label">Happy Readers</div>
+              </div>
+              <div class="hero-stat">
+                <div class="stat-number">4.8★</div>
+                <div class="stat-label">Average Rating</div>
+              </div>
+            </div>
+          </div>
+          <div class="hero-visual">
+            <div class="hero-book-stack" id="hero-book-stack">
+              <!-- Books rendered by JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Category Strip -->
+    <section class="category-strip" id="category-section">
+      <div class="category-list container" id="category-list">
+        <!-- Categories rendered by JS -->
+      </div>
+    </section>
+
+    <!-- Trending Books -->
+    <section class="section">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">Trending Now</h2>
+          <a href="catalog.html" class="view-all-link">View All <i class="fas fa-arrow-right"></i></a>
+        </div>
+        <div class="book-grid" id="trending-grid">
+          <!-- Books rendered by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Deals Banner -->
+    <section class="section" style="padding-top:0;">
+      <div class="container">
+        <div class="deals-banner">
+          <div class="deals-content">
+            <h2>🔥 Deal of the Day</h2>
+            <p>Up to 60% off on bestselling fiction & non-fiction books!</p>
+            <a href="catalog.html" class="btn btn-accent btn-lg"><i class="fas fa-bolt"></i> Shop Deals</a>
+          </div>
+          <div class="deals-timer" id="deal-timer">
+            <!-- Timer rendered by JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Bestsellers -->
+    <section class="section" style="padding-top:0;">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">Bestsellers</h2>
+          <a href="catalog.html?category=Bestseller" class="view-all-link">View All <i class="fas fa-arrow-right"></i></a>
+        </div>
+        <div class="book-grid" id="bestseller-grid">
+          <!-- Books rendered by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="section" style="background: var(--bg-secondary);">
+      <div class="container">
+        <div class="section-header" style="justify-content:center;">
+          <h2 class="section-title" style="text-align:center;">Why Choose BookVerse?</h2>
+        </div>
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-truck-fast"></i></div>
+            <h3>Free Delivery</h3>
+            <p>Free shipping on all orders above ₹499. Fast and reliable delivery.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon" style="background:linear-gradient(135deg, var(--accent-glow), transparent);"><i class="fas fa-shield-halved" style="color:var(--accent-light);"></i></div>
+            <h3>Secure Payments</h3>
+            <p>100% secure payment with multiple payment options available.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon" style="background:linear-gradient(135deg, rgba(0,210,211,0.2), transparent);"><i class="fas fa-rotate-left" style="color:var(--secondary);"></i></div>
+            <h3>Easy Returns</h3>
+            <p>30-day hassle-free returns on all products. No questions asked.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon" style="background:linear-gradient(135deg, rgba(255,217,61,0.15), transparent);"><i class="fas fa-headset" style="color:var(--warning);"></i></div>
+            <h3>24/7 Support</h3>
+            <p>Round-the-clock customer support via chat, email, and phone.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- New Arrivals -->
+    <section class="section">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">New Arrivals</h2>
+          <a href="catalog.html" class="view-all-link">View All <i class="fas fa-arrow-right"></i></a>
+        </div>
+        <div class="book-grid" id="new-arrivals-grid">
+          <!-- Books rendered by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="section" style="background: var(--bg-secondary);">
+      <div class="container">
+        <div class="section-header" style="justify-content:center;">
+          <h2 class="section-title" style="text-align:center;">What Our Readers Say</h2>
+        </div>
+        <div class="testimonial-slider" id="testimonials">
+          <!-- Testimonials rendered by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Newsletter -->
+    <section class="section">
+      <div class="container">
+        <div class="newsletter">
+          <h2>📬 Stay in the Loop</h2>
+          <p>Subscribe to our newsletter for exclusive deals, new releases, and reading recommendations.</p>
+          <form class="newsletter-form" onsubmit="event.preventDefault(); showToast('success', 'Subscribed successfully! Welcome aboard.'); this.reset();">
+            <input type="email" placeholder="Enter your email address" required>
+            <button type="submit" class="btn btn-primary">Subscribe</button>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <div id="footer-container"></div>
+
+  <!-- Back to Top -->
+  <button class="back-to-top" id="back-to-top"><i class="fas fa-arrow-up"></i></button>
+
+  <script src="js/app.js"></script>
+  <script src="js/frontend-api.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      try { BookStore.books = (await loadBooksFromBackend()).map(b => ({...b, originalPrice:Number(b.originalPrice), price:Number(b.price), rating:Number(b.rating), reviews:b.reviewCount})); } catch (e) { console.warn('Backend unavailable, using demo data.'); }
+
+      // Render navbar and footer
+      document.getElementById('navbar-container').innerHTML = renderNavbar();
+      document.getElementById('footer-container').innerHTML = renderFooter();
+      initNavbarScroll();
+      initBackToTop();
+      initUserDropdown();
+      initSearch();
+
+      // Hero book stack
+      const heroStack = document.getElementById('hero-book-stack');
+      const heroBooks = BookStore.books.slice(0, 3);
+      heroStack.innerHTML = heroBooks.map(book =>
+        `<div class="hero-book"><img src="${book.image}" alt="${book.title}" onerror="this.src='https://via.placeholder.com/240x340/1a1a2e/6c5ce7?text=Book'"></div>`
+      ).join('');
+
+      // Categories
+      const catList = document.getElementById('category-list');
+      catList.innerHTML = BookStore.categories.map(cat =>
+        `<a href="catalog.html?category=${encodeURIComponent(cat.name)}" class="category-chip"><i class="${cat.icon}"></i> ${cat.name}</a>`
+      ).join('');
+
+      // Trending books (highest reviews)
+      const trending = [...BookStore.books].sort((a, b) => b.reviews - a.reviews).slice(0, 4);
+      document.getElementById('trending-grid').innerHTML = trending.map(createBookCard).join('');
+
+      // Bestsellers
+      const bestsellers = BookStore.books.filter(b => b.badge === 'Bestseller' || b.badge === 'Top Rated' || b.badge === 'Must Read').slice(0, 4);
+      document.getElementById('bestseller-grid').innerHTML = bestsellers.map(createBookCard).join('');
+
+      // New Arrivals
+      const newArrivals = BookStore.books.filter(b => b.badge === 'New' || b.badge === 'Trending' || b.badge === 'Popular').concat(BookStore.books.slice(8, 12)).slice(0, 4);
+      document.getElementById('new-arrivals-grid').innerHTML = newArrivals.map(createBookCard).join('');
+
+      // Testimonials
+      const testimonialsEl = document.getElementById('testimonials');
+      testimonialsEl.innerHTML = BookStore.testimonials.map(t => `
+        <div class="testimonial-card">
+          <div class="testimonial-stars">${generateStars(t.rating)}</div>
+          <p class="testimonial-text">"${t.text}"</p>
+          <div class="testimonial-author">
+            <img src="${t.avatar}" alt="${t.name}">
+            <div>
+              <div class="testimonial-author-name">${t.name}</div>
+              <div class="testimonial-author-title">${t.title}</div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      // Deal Timer
+      initDealTimer();
+    });
+  </script>
+</body>
+</html>

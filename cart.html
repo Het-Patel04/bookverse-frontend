@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="View and manage your BookVerse shopping cart.">
+  <title>Shopping Cart — BookVerse</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
+</head>
+<body>
+  <div id="navbar-container"></div>
+  <div class="toast-container" id="toast-container"></div>
+
+  <main class="page-content cart-page">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="index.html">Home</a>
+        <span class="separator"><i class="fas fa-chevron-right"></i></span>
+        <span class="current">Shopping Cart</span>
+      </div>
+
+      <div id="cart-content">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+  </main>
+
+  <div id="footer-container"></div>
+  <button class="back-to-top" id="back-to-top"><i class="fas fa-arrow-up"></i></button>
+
+  <!-- Checkout Success Modal -->
+  <div class="modal-backdrop" id="modal-backdrop" onclick="closeCheckoutModal()"></div>
+  <div class="modal" id="checkout-modal" style="text-align:center; max-width:440px;">
+    <div style="font-size:4rem; margin-bottom:16px;">🎉</div>
+    <h2 style="margin-bottom:8px;">Order Placed Successfully!</h2>
+    <p style="color:var(--text-secondary); margin-bottom:24px;">Your books are on their way! You'll receive a confirmation email shortly.</p>
+    <div style="display:flex;gap:12px;justify-content:center;">
+      <a href="profile.html#orders" class="btn btn-primary"><i class="fas fa-box"></i> View Orders</a>
+      <a href="catalog.html" class="btn btn-outline"><i class="fas fa-shopping-bag"></i> Continue Shopping</a>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('navbar-container').innerHTML = renderNavbar();
+      document.getElementById('footer-container').innerHTML = renderFooter();
+      initNavbarScroll();
+      initBackToTop();
+      initUserDropdown();
+      initSearch();
+
+      renderCart();
+    });
+
+    function renderCart() {
+      const container = document.getElementById('cart-content');
+
+      if (AppState.cart.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon"><i class="fas fa-cart-shopping"></i></div>
+            <h3>Your cart is empty</h3>
+            <p>Looks like you haven't added any books yet. Start exploring!</p>
+            <a href="catalog.html" class="btn btn-primary btn-lg"><i class="fas fa-shopping-bag"></i> Browse Books</a>
+          </div>
+        `;
+        return;
+      }
+
+      const cartTotal = AppState.getCartTotal();
+      const originalTotal = AppState.getCartOriginalTotal();
+      const savings = originalTotal - cartTotal;
+      const itemCount = AppState.getCartItemCount();
+      const delivery = cartTotal >= 499 ? 0 : 49;
+      const finalTotal = cartTotal + delivery;
+
+      let cartItemsHTML = '';
+      AppState.cart.forEach(item => {
+        const book = BookStore.books.find(b => b.id === item.bookId);
+        if (!book) return;
+        const discount = getDiscount(book.originalPrice, book.price);
+
+        cartItemsHTML += `
+          <div class="cart-item" id="cart-item-${book.id}">
+            <div class="cart-item-image">
+              <a href="book-detail.html?id=${book.id}">
+                <img src="${book.image}" alt="${book.title}" onerror="this.src='https://via.placeholder.com/100x140/1a1a2e/6c5ce7?text=Book'">
+              </a>
+            </div>
+            <div class="cart-item-info">
+              <h3><a href="book-detail.html?id=${book.id}" style="color:var(--text-primary);">${book.title}</a></h3>
+              <p class="cart-item-author">by ${book.author}</p>
+              <span class="cart-item-format">${book.format}</span>
+              <div class="cart-item-price">
+                <span class="current">${formatPrice(book.price)}</span>
+                <span class="original">${formatPrice(book.originalPrice)}</span>
+                <span class="discount">${discount}% off</span>
+              </div>
+              <div class="cart-item-actions">
+                <div class="qty-control">
+                  <button onclick="changeQty(${book.id}, -1)"><i class="fas fa-minus"></i></button>
+                  <div class="qty-value">${item.qty}</div>
+                  <button onclick="changeQty(${book.id}, 1)"><i class="fas fa-plus"></i></button>
+                </div>
+                <button class="cart-item-remove" onclick="removeItem(${book.id})">
+                  <i class="fas fa-trash-alt"></i> Remove
+                </button>
+                <button class="cart-item-remove" onclick="moveToWishlist(${book.id})" style="color:var(--primary-light);">
+                  <i class="far fa-heart"></i> Wishlist
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = `
+        <div class="cart-layout">
+          <div class="cart-items-section">
+            <div class="cart-items-header">
+              <h2><i class="fas fa-shopping-cart" style="color:var(--primary-light);margin-right:8px;"></i> My Cart (${itemCount} items)</h2>
+              <button class="btn btn-ghost btn-sm" onclick="clearCart()"><i class="fas fa-trash"></i> Clear All</button>
+            </div>
+            ${cartItemsHTML}
+          </div>
+
+          <div class="cart-summary">
+            <h3>Order Summary</h3>
+            <div class="cart-summary-row">
+              <span>Price (${itemCount} items)</span>
+              <span>${formatPrice(originalTotal)}</span>
+            </div>
+            <div class="cart-summary-row">
+              <span>Discount</span>
+              <span class="savings">- ${formatPrice(savings)}</span>
+            </div>
+            <div class="cart-summary-row">
+              <span>Delivery</span>
+              <span style="color: ${delivery === 0 ? 'var(--success)' : 'var(--text-primary)'};">${delivery === 0 ? 'FREE' : formatPrice(delivery)}</span>
+            </div>
+            ${delivery > 0 ? `<p style="font-size:0.8rem;color:var(--text-muted);margin-top:4px;">Add ₹${499 - cartTotal} more for free delivery</p>` : ''}
+            <div class="cart-summary-row total">
+              <span>Total Amount</span>
+              <span>${formatPrice(finalTotal)}</span>
+            </div>
+            <p style="color:var(--success);font-size:0.9rem;font-weight:600;margin-top:8px;">
+              <i class="fas fa-tag"></i> You save ${formatPrice(savings)} on this order!
+            </p>
+
+            <div class="coupon-input">
+              <input type="text" placeholder="Coupon code" id="coupon-input">
+              <button class="btn btn-outline btn-sm" onclick="applyCoupon()">Apply</button>
+            </div>
+
+            <button class="btn btn-accent btn-lg checkout-btn" onclick="checkout()">
+              <i class="fas fa-lock"></i> Place Order
+            </button>
+            <p class="secure-text"><i class="fas fa-shield-halved"></i> Safe and Secure Payments</p>
+          </div>
+        </div>
+      `;
+    }
+
+    function changeQty(bookId, delta) {
+      const item = AppState.cart.find(i => i.bookId === bookId);
+      if (!item) return;
+      const newQty = item.qty + delta;
+      if (newQty <= 0) {
+        removeItem(bookId);
+        return;
+      }
+      AppState.updateCartQty(bookId, newQty);
+      renderCart();
+      // Re-render navbar to update cart count
+      document.getElementById('navbar-container').innerHTML = renderNavbar();
+      initUserDropdown();
+    }
+
+    function removeItem(bookId) {
+      AppState.removeFromCart(bookId);
+      showToast('info', 'Item removed from cart');
+      renderCart();
+      document.getElementById('navbar-container').innerHTML = renderNavbar();
+      initUserDropdown();
+    }
+
+    function moveToWishlist(bookId) {
+      if (!AppState.isInWishlist(bookId)) {
+        AppState.toggleWishlist(bookId);
+      }
+      AppState.removeFromCart(bookId);
+      showToast('success', 'Moved to wishlist');
+      renderCart();
+      document.getElementById('navbar-container').innerHTML = renderNavbar();
+      initUserDropdown();
+    }
+
+    function clearCart() {
+      AppState.cart = [];
+      AppState.save();
+      updateCartCount();
+      showToast('info', 'Cart cleared');
+      renderCart();
+      document.getElementById('navbar-container').innerHTML = renderNavbar();
+      initUserDropdown();
+    }
+
+    function applyCoupon() {
+      const code = document.getElementById('coupon-input').value.trim();
+      if (!code) {
+        showToast('error', 'Please enter a coupon code');
+        return;
+      }
+      if (code.toUpperCase() === 'BOOK10' || code.toUpperCase() === 'WELCOME') {
+        showToast('success', 'Coupon applied! 10% discount added.');
+      } else {
+        showToast('error', 'Invalid coupon code. Try BOOK10 or WELCOME');
+      }
+    }
+
+    function checkout() {
+      if (!AppState.isLoggedIn()) {
+        showToast('info', 'Please login to place your order');
+        setTimeout(() => window.location.href = 'login.html', 1200);
+        return;
+      }
+
+      // Create order
+      const order = {
+        id: 'BV-2026-' + Math.floor(Math.random() * 9000 + 1000),
+        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        status: 'Processing',
+        items: AppState.cart.map(i => i.bookId),
+        total: AppState.getCartTotal()
+      };
+      AppState.orders.unshift(order);
+      AppState.cart = [];
+      AppState.save();
+      updateCartCount();
+
+      // Show success modal
+      document.getElementById('modal-backdrop').classList.add('active');
+      document.getElementById('checkout-modal').classList.add('active');
+    }
+
+    function closeCheckoutModal() {
+      document.getElementById('modal-backdrop').classList.remove('active');
+      document.getElementById('checkout-modal').classList.remove('active');
+      renderCart();
+      document.getElementById('navbar-container').innerHTML = renderNavbar();
+      initUserDropdown();
+    }
+  </script>
+</body>
+</html>

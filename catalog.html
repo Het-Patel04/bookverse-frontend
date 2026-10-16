@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Browse and shop from our extensive catalog of books across all genres.">
+  <title>Shop Books — BookVerse</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
+</head>
+<body>
+  <div id="navbar-container"></div>
+  <div class="toast-container" id="toast-container"></div>
+
+  <div class="modal-backdrop" id="modal-backdrop" onclick="closeModal()"></div>
+  <div class="modal" id="quick-view-modal">
+    <div class="modal-header">
+      <h2>Quick View</h2>
+      <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body"></div>
+  </div>
+
+  <main class="page-content catalog-page">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="index.html">Home</a>
+        <span class="separator"><i class="fas fa-chevron-right"></i></span>
+        <span class="current" id="breadcrumb-current">Shop</span>
+      </div>
+
+      <div class="catalog-layout">
+        <!-- Filter Sidebar -->
+        <aside class="filter-sidebar">
+          <div class="filter-group">
+            <h3>Categories <i class="fas fa-chevron-down"></i></h3>
+            <div id="filter-categories">
+              <!-- Rendered by JS -->
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <h3>Price Range <i class="fas fa-chevron-down"></i></h3>
+            <div class="price-range-slider">
+              <input type="range" id="price-max" min="100" max="700" value="700" oninput="applyFilters()">
+              <div class="price-range-values">
+                <span>₹100</span>
+                <span id="price-max-display">₹700</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <h3>Rating <i class="fas fa-chevron-down"></i></h3>
+            <label class="filter-option">
+              <input type="radio" name="rating" value="4" onchange="applyFilters()"> 4★ & above
+            </label>
+            <label class="filter-option">
+              <input type="radio" name="rating" value="3" onchange="applyFilters()"> 3★ & above
+            </label>
+            <label class="filter-option">
+              <input type="radio" name="rating" value="0" checked onchange="applyFilters()"> All Ratings
+            </label>
+          </div>
+
+          <div class="filter-group">
+            <h3>Format <i class="fas fa-chevron-down"></i></h3>
+            <label class="filter-option">
+              <input type="checkbox" value="Paperback" onchange="applyFilters()"> Paperback
+            </label>
+            <label class="filter-option">
+              <input type="checkbox" value="Hardcover" onchange="applyFilters()"> Hardcover
+            </label>
+          </div>
+
+          <button class="btn btn-outline" style="width:100%;" onclick="clearFilters()">
+            <i class="fas fa-filter-circle-xmark"></i> Clear Filters
+          </button>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="catalog-main">
+          <div class="catalog-toolbar">
+            <div class="catalog-result-count">
+              Showing <span id="result-count">0</span> results
+            </div>
+            <div class="catalog-sort">
+              <select class="sort-select" id="sort-select" onchange="applyFilters()">
+                <option value="relevance">Sort by: Relevance</option>
+                <option value="price-low">Price: Low to High</option>
+                <option value="price-high">Price: High to Low</option>
+                <option value="rating">Highest Rated</option>
+                <option value="newest">Newest First</option>
+                <option value="popular">Most Popular</option>
+              </select>
+              <div class="view-toggle">
+                <button class="active" onclick="setView('grid', this)" title="Grid View"><i class="fas fa-th"></i></button>
+                <button onclick="setView('list', this)" title="List View"><i class="fas fa-list"></i></button>
+              </div>
+            </div>
+          </div>
+
+          <div class="book-grid book-grid-wide" id="catalog-grid">
+            <!-- Books rendered by JS -->
+          </div>
+
+          <div class="empty-state" id="no-results" style="display:none;">
+            <div class="empty-state-icon"><i class="fas fa-search"></i></div>
+            <h3>No books found</h3>
+            <p>Try adjusting your filters or search terms</p>
+            <button class="btn btn-primary" onclick="clearFilters()">Clear Filters</button>
+          </div>
+
+          <div class="pagination" id="pagination">
+            <!-- Pagination rendered by JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="footer-container"></div>
+  <button class="back-to-top" id="back-to-top"><i class="fas fa-arrow-up"></i></button>
+
+  <script src="js/app.js"></script>
+  <script src="js/frontend-api.js"></script>
+  <script>
+    let currentPage = 1;
+    const booksPerPage = 8;
+    let currentView = 'grid';
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      try { BookStore.books = (await loadBooksFromBackend()).map(b => ({...b, originalPrice:Number(b.originalPrice), price:Number(b.price), rating:Number(b.rating), reviews:b.reviewCount})); } catch (e) { console.warn('Backend unavailable, using demo data.'); }
+
+            document.getElementById('navbar-container').innerHTML = renderNavbar();
+      document.getElementById('footer-container').innerHTML = renderFooter();
+      initNavbarScroll();
+      initBackToTop();
+      initUserDropdown();
+      initSearch();
+
+      // Render category filters
+      const catContainer = document.getElementById('filter-categories');
+      BookStore.categories.forEach(cat => {
+        catContainer.innerHTML += `
+          <label class="filter-option">
+            <input type="checkbox" value="${cat.name}" onchange="applyFilters()" ${getUrlParam('category') === cat.name ? 'checked' : ''}>
+            ${cat.name}
+            <span class="count">(${cat.count})</span>
+          </label>
+        `;
+      });
+
+      // Check URL params for search / category
+      const searchParam = getUrlParam('search');
+      const categoryParam = getUrlParam('category');
+
+      if (searchParam) {
+        document.getElementById('navbar-search-input').value = searchParam;
+        document.getElementById('breadcrumb-current').textContent = `Search: "${searchParam}"`;
+      }
+      if (categoryParam && categoryParam !== 'All') {
+        document.getElementById('breadcrumb-current').textContent = categoryParam;
+      }
+
+      applyFilters();
+    });
+
+    function getUrlParam(key) {
+      const params = new URLSearchParams(window.location.search);
+      return params.get(key);
+    }
+
+    function applyFilters() {
+      let books = [...BookStore.books];
+
+      // Category filter
+      const checkedCats = [...document.querySelectorAll('#filter-categories input:checked')].map(el => el.value);
+      if (checkedCats.length > 0 && !checkedCats.includes('All')) {
+        books = books.filter(b => checkedCats.includes(b.category));
+      }
+
+      // Search filter
+      const searchParam = getUrlParam('search');
+      const searchInput = document.getElementById('navbar-search-input')?.value || '';
+      const searchTerm = (searchInput || searchParam || '').toLowerCase();
+      if (searchTerm) {
+        books = books.filter(b =>
+          b.title.toLowerCase().includes(searchTerm) ||
+          b.author.toLowerCase().includes(searchTerm) ||
+          b.category.toLowerCase().includes(searchTerm)
+        );
+      }
+
+      // Badge filter from URL
+      const badgeParam = getUrlParam('category');
+      if (badgeParam && !['All', 'Fiction', 'Self-Help', 'Sci-Fi', 'Finance', 'Memoir', 'Non-Fiction', 'Classic', 'Thriller'].includes(badgeParam)) {
+        books = books.filter(b => b.badge === badgeParam);
+      }
+
+      // Price filter
+      const maxPrice = parseInt(document.getElementById('price-max').value);
+      document.getElementById('price-max-display').textContent = formatPrice(maxPrice);
+      books = books.filter(b => b.price <= maxPrice);
+
+      // Rating filter
+      const ratingVal = document.querySelector('input[name="rating"]:checked')?.value || 0;
+      if (ratingVal > 0) {
+        books = books.filter(b => b.rating >= parseInt(ratingVal));
+      }
+
+      // Format filter
+      const checkedFormats = [...document.querySelectorAll('.filter-group input[type="checkbox"][value="Paperback"], .filter-group input[type="checkbox"][value="Hardcover"]')]
+        .filter(el => el.checked).map(el => el.value);
+      if (checkedFormats.length > 0) {
+        books = books.filter(b => checkedFormats.includes(b.format));
+      }
+
+      // Sort
+      const sortVal = document.getElementById('sort-select').value;
+      switch (sortVal) {
+        case 'price-low': books.sort((a, b) => a.price - b.price); break;
+        case 'price-high': books.sort((a, b) => b.price - a.price); break;
+        case 'rating': books.sort((a, b) => b.rating - a.rating); break;
+        case 'popular': books.sort((a, b) => b.reviews - a.reviews); break;
+      }
+
+      // Update result count
+      document.getElementById('result-count').textContent = books.length;
+
+      // Pagination
+      const totalPages = Math.ceil(books.length / booksPerPage);
+      if (currentPage > totalPages) currentPage = 1;
+      const startIdx = (currentPage - 1) * booksPerPage;
+      const pageBooks = books.slice(startIdx, startIdx + booksPerPage);
+
+      // Render
+      const grid = document.getElementById('catalog-grid');
+      const noResults = document.getElementById('no-results');
+
+      if (pageBooks.length === 0) {
+        grid.style.display = 'none';
+        noResults.style.display = 'block';
+      } else {
+        grid.style.display = '';
+        noResults.style.display = 'none';
+        grid.innerHTML = pageBooks.map(createBookCard).join('');
+      }
+
+      // Render pagination
+      renderPagination(totalPages);
+    }
+
+    function renderPagination(totalPages) {
+      const container = document.getElementById('pagination');
+      if (totalPages <= 1) { container.innerHTML = ''; return; }
+
+      let html = `<button ${currentPage === 1 ? 'disabled' : ''} onclick="goToPage(${currentPage - 1})"><i class="fas fa-chevron-left"></i></button>`;
+      for (let i = 1; i <= totalPages; i++) {
+        html += `<button class="${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+      }
+      html += `<button ${currentPage === totalPages ? 'disabled' : ''} onclick="goToPage(${currentPage + 1})"><i class="fas fa-chevron-right"></i></button>`;
+      container.innerHTML = html;
+    }
+
+    function goToPage(page) {
+      currentPage = page;
+      applyFilters();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function setView(view, btn) {
+      currentView = view;
+      document.querySelectorAll('.view-toggle button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const grid = document.getElementById('catalog-grid');
+      if (view === 'list') {
+        grid.style.gridTemplateColumns = '1fr';
+      } else {
+        grid.style.gridTemplateColumns = '';
+      }
+    }
+
+    function clearFilters() {
+      document.querySelectorAll('.filter-sidebar input[type="checkbox"]').forEach(el => el.checked = false);
+      document.querySelector('input[name="rating"][value="0"]').checked = true;
+      document.getElementById('price-max').value = 700;
+      document.getElementById('sort-select').value = 'relevance';
+      // Clear URL params
+      window.history.replaceState({}, '', 'catalog.html');
+      currentPage = 1;
+      applyFilters();
+    }
+  </script>
+</body>
+</html>

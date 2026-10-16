@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="View detailed information about this book on BookVerse.">
+  <title>Book Details — BookVerse</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
+</head>
+<body>
+  <div id="navbar-container"></div>
+  <div class="toast-container" id="toast-container"></div>
+
+  <main class="page-content book-detail-page">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="index.html">Home</a>
+        <span class="separator"><i class="fas fa-chevron-right"></i></span>
+        <a href="catalog.html">Shop</a>
+        <span class="separator"><i class="fas fa-chevron-right"></i></span>
+        <span class="current" id="breadcrumb-title">Book</span>
+      </div>
+
+      <div class="book-detail-layout" id="book-detail-content">
+        <!-- Rendered by JS -->
+      </div>
+
+      <!-- Related Books -->
+      <section style="margin-top:20px;">
+        <div class="section-header">
+          <h2 class="section-title">You May Also Like</h2>
+          <a href="catalog.html" class="view-all-link">View All <i class="fas fa-arrow-right"></i></a>
+        </div>
+        <div class="book-grid" id="related-books">
+          <!-- Rendered by JS -->
+        </div>
+      </section>
+
+      <!-- Reviews Section -->
+      <section class="section" style="padding-bottom:0;">
+        <h2 class="section-title">Customer Reviews</h2>
+        <div id="reviews-section" style="margin-top:28px;">
+          <!-- Rendered by JS -->
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div id="footer-container"></div>
+  <button class="back-to-top" id="back-to-top"><i class="fas fa-arrow-up"></i></button>
+
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('navbar-container').innerHTML = renderNavbar();
+      document.getElementById('footer-container').innerHTML = renderFooter();
+      initNavbarScroll();
+      initBackToTop();
+      initUserDropdown();
+      initSearch();
+
+      const params = new URLSearchParams(window.location.search);
+      const bookId = parseInt(params.get('id')) || 1;
+      const book = BookStore.books.find(b => b.id === bookId);
+
+      if (!book) {
+        document.getElementById('book-detail-content').innerHTML = `
+          <div class="empty-state" style="grid-column:1/-1;">
+            <div class="empty-state-icon"><i class="fas fa-book"></i></div>
+            <h3>Book not found</h3>
+            <p>The book you're looking for doesn't exist.</p>
+            <a href="catalog.html" class="btn btn-primary">Browse Books</a>
+          </div>
+        `;
+        return;
+      }
+
+      document.title = `${book.title} — BookVerse`;
+      document.getElementById('breadcrumb-title').textContent = book.title;
+
+      const discount = getDiscount(book.originalPrice, book.price);
+      const isWishlisted = AppState.isInWishlist(book.id);
+
+      document.getElementById('book-detail-content').innerHTML = `
+        <!-- Gallery -->
+        <div class="book-detail-gallery">
+          <div class="book-detail-main-image">
+            <img src="${book.image}" alt="${book.title}" id="main-book-image" onerror="this.src='https://via.placeholder.com/400x520/1a1a2e/6c5ce7?text=${encodeURIComponent(book.title)}'">
+          </div>
+          <div class="book-detail-thumbnails">
+            <div class="thumb active"><img src="${book.image}" alt="${book.title}"></div>
+            <div class="thumb" style="display:flex;align-items:center;justify-content:center;background:var(--bg-elevated);color:var(--text-muted);font-size:0.8rem;text-align:center;padding:8px;">Back Cover</div>
+            <div class="thumb" style="display:flex;align-items:center;justify-content:center;background:var(--bg-elevated);color:var(--text-muted);font-size:0.8rem;text-align:center;padding:8px;">Index</div>
+          </div>
+        </div>
+
+        <!-- Info -->
+        <div class="book-detail-info">
+          ${book.badge ? `<span class="badge badge-accent" style="margin-bottom:12px;">${book.badge}</span>` : ''}
+          <h1>${book.title}</h1>
+          <p class="book-detail-author">by <a href="catalog.html?search=${encodeURIComponent(book.author)}">${book.author}</a></p>
+
+          <div class="book-detail-rating">
+            <span class="rating-value"><i class="fas fa-star"></i> ${book.rating}</span>
+            <div class="stars">${generateStars(book.rating)}</div>
+            <span class="rating-text">${formatReviews(book.reviews)} ratings & reviews</span>
+          </div>
+
+          <div class="book-detail-price-section">
+            <div class="book-detail-price">
+              <span class="current-price">${formatPrice(book.price)}</span>
+              <span class="original-price">${formatPrice(book.originalPrice)}</span>
+              <span class="discount-pct">${discount}% off</span>
+            </div>
+            <p class="tax-info" style="color:var(--text-muted);font-size:0.85rem;">Inclusive of all taxes</p>
+
+            <div class="book-detail-offers">
+              <div class="offer-tag"><i class="fas fa-tag"></i> <span>Bank Offer: 10% off on HDFC Cards</span></div>
+              <div class="offer-tag"><i class="fas fa-tag"></i> <span>Free delivery on orders above ₹499</span></div>
+              <div class="offer-tag"><i class="fas fa-tag"></i> <span>Buy 3 Get 1 Free on selected titles</span></div>
+            </div>
+          </div>
+
+          <div class="book-detail-actions">
+            <button class="btn btn-primary btn-lg" onclick="AppState.addToCart(${book.id})">
+              <i class="fas fa-cart-plus"></i> Add to Cart
+            </button>
+            <button class="btn btn-accent btn-lg" onclick="AppState.addToCart(${book.id}); window.location.href='cart.html'">
+              <i class="fas fa-bolt"></i> Buy Now
+            </button>
+            <button class="btn btn-outline btn-icon" onclick="AppState.toggleWishlist(${book.id}); this.querySelector('i').classList.toggle('far'); this.querySelector('i').classList.toggle('fas');" style="flex:none;">
+              <i class="${isWishlisted ? 'fas' : 'far'} fa-heart"></i>
+            </button>
+          </div>
+
+          <div class="book-detail-meta">
+            <div class="meta-item"><span class="meta-label">Format</span><span class="meta-value">${book.format}</span></div>
+            <div class="meta-item"><span class="meta-label">Pages</span><span class="meta-value">${book.pages}</span></div>
+            <div class="meta-item"><span class="meta-label">Language</span><span class="meta-value">${book.language}</span></div>
+            <div class="meta-item"><span class="meta-label">Publisher</span><span class="meta-value">${book.publisher}</span></div>
+            <div class="meta-item"><span class="meta-label">ISBN</span><span class="meta-value">${book.isbn}</span></div>
+            <div class="meta-item"><span class="meta-label">Category</span><span class="meta-value"><a href="catalog.html?category=${book.category}" style="color:var(--primary-light);">${book.category}</a></span></div>
+          </div>
+
+          <div class="book-detail-description">
+            <h3>About this Book</h3>
+            <p>${book.description}</p>
+            <p style="margin-top:12px;">This is a ${book.format.toLowerCase()} edition published by ${book.publisher}. It contains ${book.pages} pages and is written in ${book.language}. Whether you're a longtime fan of ${book.category.toLowerCase()} or just getting started, this is a must-have addition to your collection.</p>
+          </div>
+
+          <!-- Delivery Info -->
+          <div style="margin-top:24px; background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius-lg); padding:20px;">
+            <h3 style="font-size:1rem; margin-bottom:16px;"><i class="fas fa-truck" style="color:var(--primary-light);margin-right:8px;"></i> Delivery Options</h3>
+            <div style="display:flex;gap:20px;flex-wrap:wrap;">
+              <div style="flex:1;min-width:180px;padding:12px;background:var(--bg-secondary);border-radius:var(--radius-md);">
+                <div style="font-weight:600;font-size:0.9rem;">Standard Delivery</div>
+                <div style="color:var(--text-muted);font-size:0.85rem;">5-7 business days</div>
+                <div style="color:var(--success);font-weight:600;font-size:0.85rem;margin-top:4px;">FREE</div>
+              </div>
+              <div style="flex:1;min-width:180px;padding:12px;background:var(--bg-secondary);border-radius:var(--radius-md);">
+                <div style="font-weight:600;font-size:0.9rem;">Express Delivery</div>
+                <div style="color:var(--text-muted);font-size:0.85rem;">2-3 business days</div>
+                <div style="font-weight:600;font-size:0.85rem;margin-top:4px;">₹49</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Related books (same category, exclude current)
+      const related = BookStore.books.filter(b => b.id !== book.id && (b.category === book.category || b.author === book.author)).slice(0, 4);
+      const fallback = related.length < 4 ? BookStore.books.filter(b => b.id !== book.id && !related.includes(b)).slice(0, 4 - related.length) : [];
+      document.getElementById('related-books').innerHTML = [...related, ...fallback].map(createBookCard).join('');
+
+      // Mock reviews
+      const mockReviews = [
+        { name: "Aditya M.", rating: 5, date: "Aug 10, 2026", text: "Absolutely loved this book! Couldn't put it down. The writing is brilliant and the story kept me engaged from start to finish." },
+        { name: "Sneha R.", rating: 4, date: "Jul 22, 2026", text: "Great read overall. Some parts were a bit slow but the ending made up for it. Would definitely recommend to friends." },
+        { name: "Vikram S.", rating: 5, date: "Jul 15, 2026", text: "This is now one of my all-time favorites. Beautifully written, thought-provoking, and emotionally moving. A masterpiece." },
+        { name: "Kavya P.", rating: 4, date: "Jun 30, 2026", text: "Very well written. The author's style is unique and refreshing. Fast delivery too. BookVerse never disappoints!" }
+      ];
+
+      document.getElementById('reviews-section').innerHTML = `
+        <div style="display:grid;grid-template-columns:280px 1fr;gap:32px;">
+          <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:28px;text-align:center;align-self:start;">
+            <div style="font-size:3rem;font-weight:800;color:var(--text-primary);">${book.rating}</div>
+            <div class="stars" style="justify-content:center;font-size:1.2rem;margin:8px 0;">${generateStars(book.rating)}</div>
+            <p style="color:var(--text-muted);font-size:0.9rem;">${formatReviews(book.reviews)} reviews</p>
+            <div style="margin-top:20px;">
+              ${[5,4,3,2,1].map(star => {
+                const pct = star === 5 ? 60 : star === 4 ? 25 : star === 3 ? 10 : star === 2 ? 3 : 2;
+                return `<div style="display:flex;align-items:center;gap:8px;margin:6px 0;">
+                  <span style="font-size:0.8rem;width:16px;">${star}★</span>
+                  <div style="flex:1;height:8px;background:var(--bg-secondary);border-radius:4px;overflow:hidden;">
+                    <div style="width:${pct}%;height:100%;background:var(--warning);border-radius:4px;"></div>
+                  </div>
+                  <span style="font-size:0.75rem;color:var(--text-muted);width:30px;">${pct}%</span>
+                </div>`;
+              }).join('')}
+            </div>
+          </div>
+          <div>
+            ${mockReviews.map(r => `
+              <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-md);padding:20px;margin-bottom:16px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                  <div style="display:flex;align-items:center;gap:10px;">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${r.name}" style="width:36px;height:36px;border-radius:50%;" alt="${r.name}">
+                    <div>
+                      <div style="font-weight:600;font-size:0.9rem;">${r.name}</div>
+                      <div style="font-size:0.8rem;color:var(--text-muted);">${r.date}</div>
+                    </div>
+                  </div>
+                  <span class="badge badge-success" style="font-size:0.75rem;"><i class="fas fa-star"></i> ${r.rating}</span>
+                </div>
+                <p style="color:var(--text-secondary);font-size:0.9rem;line-height:1.6;">${r.text}</p>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    });
+  </script>
+</body>
+</html>
